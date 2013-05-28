@@ -57,6 +57,7 @@ sessfit <- function(sess,catnum){
   else {out=list(coef=rep(NA,2),ci=matrix(NA,2,2),session=sess,category=catnum)}
 }
 
+#fit an overdispersed model to session and category data
 sessfit.od <- function(sess,catnum){
   sel=(piccat==catnum)&(session==sess)
   if (any(sel)){

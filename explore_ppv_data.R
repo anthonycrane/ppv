@@ -1,11 +1,5 @@
 #explore_ppv_data.R
-#look at pse fitting and diagnostics for karli's ppv behavioral data
-# osname=as.character(Sys.info()['sysname'])
-# dirpath=switch(osname,
-#                Windows="C:/Documents and Settings/pearson.CCN/My Documents/My Dropbox",
-#                Darwin="~/Dropbox",
-#                Linux="~/Dropbox")
-# setwd(paste(dirpath,"/frbayes/ppv",sep=""))
+#look at pse fitting and diagnostics for ppv behavioral data
 library("MASS")
 library("arm")
 
