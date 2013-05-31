@@ -14,7 +14,7 @@ The code is written in R and makes use of [JAGS](http://mcmc-jags.sourceforge.ne
 * __which bugs files to use__
 
 ## Reproducing Tables and Figures:
-* Data in Table 1 in the paper, summarizing explained variance and pooling, can be retrieved by running __some new file will go in place of plots_ppv.R later__ on the output of the above analyses.
+* Data in Table 1 in the paper, summarizing explained variance and pooling, can be retrieved by running `make_fitting_table.R` on the output of the above analyses.
 * Figure 3, with comparisons between hierarchical and unpooled estimates, can be reproduced with the code in `make_figure_sessfit.R`.
 * Figure 4, comparing fitted and simulated data, can be generated with `dat_vs_sim.R`.
 * A similar comparison of overdispersion in real and fitted data can be produced via `overdisp_fit_vs_sim.R`.
