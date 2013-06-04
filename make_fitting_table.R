@@ -1,8 +1,11 @@
 #make_fitting_table.R
 #make table of fit statistics given JAGS output 
 
-load("ppv_results") #load data output
 source("all_ppv_data.R") #raw data
+
+# use one of the following lines to load the appropriate data set:
+load("ppv_results") #load data output
+#load("ppv_trend_results") #load data output -- including time trend
 
 #set up some useful variables
 vnames=colnames(xx)

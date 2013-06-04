@@ -10,13 +10,13 @@ dotrend = 0 #include time trend?
 
 if (!dotrend) {
   fname="ppv_results"
-  modstr="ppv6"
+  modstr="model"
 } else {
   fname="ppv_trend_results"
-  modstr="ppv7"
+  modstr="trend"
 }
 
-bugstr=paste(modstr,".bug",sep="")
+bugstr=paste(modstr,".bug",sep="") #name of model file
 
 d <- read.jagsdata("all_ppv_data.R")
 load.module("glm")
@@ -62,7 +62,6 @@ pp=as.data.frame(do.call(rbind,p))
 
 dumplist=c("xx","ss","qq","ff","pp","Rhat")
 save(list=dumplist,file=fname)
-
 
 #how long did this take?
 endtime=proc.time()-ptm

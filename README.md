@@ -10,7 +10,7 @@ The code is written in R and makes use of [JAGS](http://mcmc-jags.sourceforge.ne
 # Workflow:
 ## Running Analyses:
 * `explore_ppv_data.R` uses conventional logit fits to model image values separately for each session. This is (more or less) the approach used in previous papers and is included for comparison. This file compiles parameters for all the fits and saves them in dump format in `conventional_fits.R` for later use.
-* `runjags_ppv.R` performs MCMC inference on the model(s) and saves the samples drawn from the Markov chains to files for later analysis. __more detail later about how to select model and output file__
+* `runjags_ppv.R` performs MCMC inference on the model(s) and saves the samples drawn from the Markov chains to files for later analysis. Setting the `dotrend` variable selects whether or not to include the time trend in the model when performing analysis. 
 * __which bugs files to use__
 
 ## Reproducing Tables and Figures:
