@@ -17,7 +17,7 @@ The code is written in R and makes use of [JAGS](http://mcmc-jags.sourceforge.ne
 * Data in Table 1 in the paper, summarizing explained variance and pooling, can be retrieved by running `make_fitting_table.R` on the output of the above analyses.
 * Figure 3, with comparisons between hierarchical and unpooled estimates, can be reproduced with the code in `make_figure_sessfit.R`.
 * Figure 4, comparing fitted and simulated data, can be generated with `dat_vs_sim.R`.
-* A similar comparison of overdispersion in real and fitted data can be produced via `overdisp_fit_vs_sim.R`.
+* A similar comparison of overdispersion in real and synthetic data can be produced via `overdisp_fit_vs_sim.R`.
 * Figure 5, which displays comparisons of the posterior mean and variance for image values across subjects, can be reproduced using `make_post_mean_comparison.R` and `make_post_var_comparison.R`.
 * Figure 6, the model including time trend, was made using `make_trend_allmonks.R` and `make_d2d_pse.R`.
 
