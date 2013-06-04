@@ -11,7 +11,7 @@ The code is written in R and makes use of [JAGS](http://mcmc-jags.sourceforge.ne
 ## Running Analyses:
 * `explore_ppv_data.R` uses conventional logit fits to model image values separately for each session. This is (more or less) the approach used in previous papers and is included for comparison. This file compiles parameters for all the fits and saves them in dump format in `conventional_fits.R` for later use.
 * `runjags_ppv.R` performs MCMC inference on the model(s) and saves the samples drawn from the Markov chains to files for later analysis. Setting the `dotrend` variable selects whether or not to include the time trend in the model when performing analysis. 
-* __which bugs files to use__
+* Models are specified in BUGS/JAGS language in `model.bug` and `trend.bug` (for the model including time trend). Models are (so far) only tested in JAGS. The correct model will be used in `runjags_ppv.R` so long as the `dotrend` variable is specified correctly. 
 
 ## Reproducing Tables and Figures:
 * Data in Table 1 in the paper, summarizing explained variance and pooling, can be retrieved by running `make_fitting_table.R` on the output of the above analyses.
