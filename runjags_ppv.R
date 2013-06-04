@@ -4,14 +4,17 @@
 
 ptm=proc.time() #get start time
 
-# osname=as.character(Sys.info()['sysname'])
-# dirpath=switch(osname,
-#                Windows="C:/Documents and Settings/pearson.CCN/My Documents/My Dropbox",
-#                Darwin="~/Dropbox")
-# setwd(paste(dirpath,"/frbayes/ppv",sep=""))
 library(rjags)
 
-modstr="ppv6"
+dotrend = 0 #include time trend?
+
+if (!dotrend) {
+  fname="ppv_results"
+  modstr="ppv6"
+} else {
+  fname="ppv_trend_results"
+  modstr="ppv7"
+}
 
 bugstr=paste(modstr,".bug",sep="")
 
@@ -21,14 +24,15 @@ m <- jags.model(bugstr, d, n.chains=5,n.adapt=1000) #,inits=initfun)
 
 update(m,10000)
 
-#x <- coda.samples(m, c("group.mean","group.cov","V","v","choice.std","choice.dof",
-#                       "Q","monk.sig"), n.iter=5000,thin=2)
-#x <- coda.samples(m, c("V","v","choice.std","choice.dof"), n.iter=20000,thin=10)
-#x <- coda.samples(m, c("V","v","choice.scale","omega.std","sess.std", #ppv5
-#                       "resid.v","resid.lp","resid.N","linpred"), n.iter=20000,thin=10)
-x <- coda.samples(m, c("V","v","choice.scale","omega.std","sess.std", #ppv5
-                       "resid.v","resid.lp","resid.N","linpred",
-                       "t.loc","t.scale","t.df"), n.iter=20000,thin=20)
+if (!dotrend) {
+  x <- coda.samples(m, c("V","v","choice.scale","omega.std","sess.std",
+                         "resid.v","resid.lp","resid.N","linpred",
+                         "t.loc","t.scale","t.df"), n.iter=20000,thin=20)
+} else {
+  x <- coda.samples(m, c("V","v","choice.scale","omega.std","sess.std", #ppv5
+                         "resid.v","resid.lp","resid.N","linpred",
+                         "t.loc","t.scale","t.df","vslope"), n.iter=20000,thin=20)
+}
 
 #now, do diagnostics
 jagssum=summary(x)
@@ -57,7 +61,6 @@ p <- coda.samples(m, c("ppred.v","ppred.choice.scale","ppred.resid.lp"), n.iter=
 pp=as.data.frame(do.call(rbind,p))
 
 dumplist=c("xx","ss","qq","ff","pp","Rhat")
-fname="ppv_results"
 save(list=dumplist,file=fname)
 
 
