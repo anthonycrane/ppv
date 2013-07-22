@@ -27,7 +27,7 @@ Ntot.comb=Ntot.vals%*%Ntot.tab
 Nimg.tab=table(Nimg[piccat==catnum],dv[piccat==catnum])
 Nimg.vals=as.integer(rownames(Nimg.tab))
 Nimg.comb=Nimg.vals%*%Nimg.tab
-udv=sort(unique(dv))
+udv=as.numeric(colnames(Nimg.comb))
 plot(udv,Nimg.comb/Ntot.comb)
 #try fitting a curve
 beta0=c(0,1,10)
@@ -44,17 +44,23 @@ sessplot(sess=44,catnum=1)
 sessplot(4,4,model='odlogit')
 
 #fit all sessions
-bb=list()
-bb.od=list()
+fit.sets = list()
+fit.objs = list()
 sc.mat=cbind(rep(1:numsess,each=numcat),rep(1:numcat,times=numsess)) #unique combinations of session and category
+modlist = c('logit','odlogit')
 for (ind in 1:numsess){
   for (ind2 in 1:numcat){
-    bb[[(ind-1)*numcat+ind2]]=sessfit(ind,ind2) #for standard logit models
-    bb.od[[(ind-1)*numcat+ind2]]=sessfit.od(ind,ind2) #for overdispersed models
+    for (model in modlist){
+      fit = sessfit(ind,ind2,model)
+      if (!is.null(fit)){
+        pf = process.fit(fit)
+      }
+      fit.objs[[model]][[(ind-1)*numcat+ind2]] = fit
+      fit.sets[[model]][[(ind-1)*numcat+ind2]] = pf
+    }
   }
 }
-fit.sets=list(bb,bb.od) #bb or bb.od
-dump(c("fit.sets"),file="conventional_fits.R")
+dump(c("fit.sets","fit.objs"),file="conventional_fits.R")
 
 #plot estimates of image value
 catnum=2

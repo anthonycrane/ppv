@@ -67,13 +67,19 @@ process.fit <- function(fit){
   beta=coef(fit)
   cf=c(beta[1]/beta[2],1/beta[2])
   names(cf)=c("Image","Width")
-  simdat=sim(fit,1000)
-  bb=simdat@coef #mc coefficient draws
-  ci=array(dim=c(2,2))
-  ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
-  ci[2,]=quantile(1/bb[,2],c(.025,.975))
-  rownames(ci)=c("Image","Width")
-  out=list(coef=cf,ci=ci)
+  if (any(is.na(beta)) | (fit$df.residual == 0)){
+    out = NULL
+  }
+  else {
+    simdat=sim(fit,1000)
+    bb=simdat@coef #mc coefficient draws
+    ci=array(dim=c(2,2))
+    ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
+    ci[2,]=quantile(1/bb[,2],c(.025,.975))
+    rownames(ci)=c("Image","Width")
+    out=list(coef=cf,ci=ci)
+  }
+  
 }
 
 sessplot <- function(sess,catnum,model='logit'){
