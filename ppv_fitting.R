@@ -41,32 +41,15 @@ assemble.data <- function(sess, catnum){
   else {return(NULL)}
 }
 
-sessfit <- function(sess,catnum){
+sessfit <- function(sess,catnum,model){
   # given session and category, fit logit model
   y = assemble.data(sess,catnum)
   
   if (!is.null(y)){
     udv = as.numeric(rownames(y))
-    fit = try(glm(y ~ udv, family=binomial(link='logit')))
-    if ((class(fit)[1]=="try-error")){
-      return(NULL)
-    }
-    else {
-      return(fit)
-    }
-  }
-  else {
-    return(NULL)
-  }
-}
-
-sessfit.od <- function(sess,catnum){
-  # given session and category, fit overdispersed logit model
-  y = assemble.data(sess,catnum)
-  
-  if (!is.null(y)){
-    udv = as.numeric(rownames(y))
-    fit = try(glm(y ~ udv, family=quasibinomial(link='logit')))
+    fit = switch(model,
+                 logit = try(glm(y ~ udv, family=binomial(link='logit'))),
+                 odlogit = try(glm(y ~ udv, family=quasibinomial(link='logit'))))
     if ((class(fit)[1]=="try-error")){
       return(NULL)
     }
@@ -107,8 +90,7 @@ sessplot <- function(sess,catnum,model='logit'){
   }
   
   # now try to fit data
-  fit = switch(model,
-         logit = sessfit(sess,catnum), odlogit = sessfit.od(sess,catnum))
+  fit = sessfit(sess,catnum,model)
   
   if (!is.null(fit)){
     beta=coef(fit)
@@ -120,7 +102,6 @@ sessplot <- function(sess,catnum,model='logit'){
                 "  Image=",beta[1]/beta[2]))
   }
 }
-
 
 
 plotcat <- function(catnum,fit.sets,which.fit,add.plot=FALSE,jitt=0,colset=rainbow(50)){
