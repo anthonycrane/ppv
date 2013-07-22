@@ -18,86 +18,142 @@ LLrobit <- function(beta,x,n,N){
   out=sum(LL)
 }
 
-#fit a logit model to a given session and category
-sessfit <- function(sess,catnum){
+assemble.data <- function(sess, catnum){
+  # marshal all data for a given session and image category into a form suitable for regression
+  
+  # which sessions to use
   sel=(piccat==catnum)&(session==sess)
+  
   if (any(sel)){
+    # accumulate total choices at each value of dv
     Ntot.tab=table(Ntot[sel],dv[sel])
     Ntot.vals=as.integer(rownames(Ntot.tab))
     Ntot.comb=Ntot.vals%*%Ntot.tab
+    
+    # accumulate total image choices at each value of dv
     Nimg.tab=table(Nimg[sel],dv[sel])
     Nimg.vals=as.integer(rownames(Nimg.tab))
     Nimg.comb=Nimg.vals%*%Nimg.tab
-    pp=Nimg.comb/Ntot.comb
-    qq=1-pp
-    sd=sqrt(pp*qq/Ntot.comb)
-    udv=1000*sort(unique(dv[sel]))
-    plot(udv,pp,xlab="dv",ylab="Percent choose image")
-    segments(udv,pp-sd,udv,pp+sd)
+    
     y=t(rbind(Nimg.comb,Ntot.comb-Nimg.comb))
-    #try to fit; data may be bad
-    fit=try(glm(y~udv,family=binomial(link="logit"))) 
-    if (!(class(fit)[1]=="try-error")){
-      beta=coef(fit)
-      curve(logistic(beta[1]+beta[2]*x),from=min(udv),to=max(udv),add=T)
-      title(paste("Session=",sess,"  Category=",cnames[catnum],"\n Width=",1/beta[2],
-                  "  Image=",beta[1]/beta[2]))
-      cf=c(beta[1]/beta[2],1/beta[2])
-      names(cf)=c("Image","Width")
-      simdat=sim(fit,1000)
-      bb=simdat@coef #mc coefficient draws
-      ci=array(dim=c(2,2))
-      ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
-      ci[2,]=quantile(1/bb[,2],c(.025,.975))
-      rownames(ci)=c("Image","Width")
-      out=list(coef=cf,ci=ci,session=sess,category=catnum)
-    }
-    else {out=list(coef=rep(NA,2),ci=matrix(NA,2,2),session=sess,category=catnum)}
-  }
-  else {out=list(coef=rep(NA,2),ci=matrix(NA,2,2),session=sess,category=catnum)}
+    return(y)
+  }  
+  else {return(NULL)}
 }
 
-#fit an overdispersed model to session and category data
+sessfit <- function(sess,catnum){
+  # given session and category, fit logit model
+  y = assemble.data(sess,catnum)
+  
+  if (!is.null(y)){
+    udv = as.numeric(rownames(y))
+    fit = try(glm(y ~ udv, family=binomial(link='logit')))
+    if ((class(fit)[1]=="try-error")){
+      return(NULL)
+    }
+    else {
+      return(fit)
+    }
+  }
+  else {
+    return(NULL)
+  }
+}
+
 sessfit.od <- function(sess,catnum){
-  sel=(piccat==catnum)&(session==sess)
-  if (any(sel)){
-    Ntot.tab=table(Ntot[sel],dv[sel])
-    Ntot.vals=as.integer(rownames(Ntot.tab))
-    Ntot.comb=Ntot.vals%*%Ntot.tab
-    Nimg.tab=table(Nimg[sel],dv[sel])
-    Nimg.vals=as.integer(rownames(Nimg.tab))
-    Nimg.comb=Nimg.vals%*%Nimg.tab
-    pp=Nimg.comb/Ntot.comb
-    qq=1-pp
-    sd=sqrt(pp*qq/Ntot.comb)
-    udv=1000*sort(unique(dv[sel]))
+  # given session and category, fit logit model
+  y = assemble.data(sess,catnum)
+  
+  if (!is.null(y)){
+    udv = as.numeric(rownames(y))
+    fit = try(glm(y ~ udv, family=quasibinomial(link='logit')))
+    if ((class(fit)[1]=="try-error")){
+      return(NULL)
+    }
+    else {
+      return(fit)
+    }
+  }
+  else {
+    return(NULL)
+  }
+}
+
+sessplot <- function(sess,catnum,model='logit'){
+  # given a session, category number, and model fit, plot data
+  y = assemble.data(sess,catnum)
+  if (!is.null(y)){
+    udv = as.numeric(rownames(y))
+    Ntot = rowSums(y)
+    pp = y[,1]/Ntot
+    qq = 1-pp
+    sd = sqrt(pp*qq/Ntot)
     plot(udv,pp,xlab="dv",ylab="Percent choose image")
     segments(udv,pp-sd,udv,pp+sd)
-    y=t(rbind(Nimg.comb,Ntot.comb-Nimg.comb))
-    #try to fit; data may be bad
-    fit=try(glm(y~udv,family=quasibinomial(link="logit"))) 
-    if (!(class(fit)[1]=="try-error")){
-      beta=coef(fit)
-      curve(logistic(beta[1]+beta[2]*x),from=min(udv),to=max(udv),add=T)
-      title(paste("Session=",sess,"  Category=",cnames[catnum],"\n Width=",1/beta[2],
-                  "  Image=",beta[1]/beta[2]))
-      cf=c(beta[1]/beta[2],1/beta[2])
-      names(cf)=c("Image","Width")
-      simdat=try(sim(fit,1000))
-      if (!(class(simdat)[1]=="try-error")){
-        bb=simdat@coef #mc coefficient draws
-        ci=array(dim=c(2,2))
-        ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
-        ci[2,]=quantile(1/bb[,2],c(.025,.975))
-      }
-      else {ci=matrix(NA,2,2)}
-      rownames(ci)=c("Image","Width")
-      out=list(coef=cf,ci=ci,session=sess,category=catnum)
-    }
-    else {out=list(coef=rep(NA,2),ci=matrix(NA,2,2),session=sess,category=catnum)}
   }
-  else {out=list(coef=rep(NA,2),ci=matrix(NA,2,2),session=sess,category=catnum)}
+  
+  # now try to fit data
+  fit = switch(model,
+         logit = sessfit(sess,catnum), odlogit = sessfit.od(sess,catnum))
+  
+  if (!is.null(fit)){
+    beta=coef(fit)
+    curve(logistic(beta[1]+beta[2]*x),from=min(udv),to=max(udv),add=T)
+    title(paste("Session=",sess,"  Category=",cnames[catnum],"\n Width=",1/beta[2],
+                "  Image=",beta[1]/beta[2]))
+    cf=c(beta[1]/beta[2],1/beta[2])
+    names(cf)=c("Image","Width")
+    simdat=sim(fit,1000)
+    bb=simdat@coef #mc coefficient draws
+    ci=array(dim=c(2,2))
+    ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
+    ci[2,]=quantile(1/bb[,2],c(.025,.975))
+    rownames(ci)=c("Image","Width")
+    out=list(coef=cf,ci=ci,session=sess,category=catnum)
+  }
 }
+
+# #fit an overdispersed model to session and category data
+# sessfit.od <- function(sess,catnum){
+#   sel=(piccat==catnum)&(session==sess)
+#   if (any(sel)){
+#     Ntot.tab=table(Ntot[sel],dv[sel])
+#     Ntot.vals=as.integer(rownames(Ntot.tab))
+#     Ntot.comb=Ntot.vals%*%Ntot.tab
+#     Nimg.tab=table(Nimg[sel],dv[sel])
+#     Nimg.vals=as.integer(rownames(Nimg.tab))
+#     Nimg.comb=Nimg.vals%*%Nimg.tab
+#     pp=Nimg.comb/Ntot.comb
+#     qq=1-pp
+#     sd=sqrt(pp*qq/Ntot.comb)
+#     udv=1000*sort(unique(dv[sel]))
+#     plot(udv,pp,xlab="dv",ylab="Percent choose image")
+#     segments(udv,pp-sd,udv,pp+sd)
+#     y=t(rbind(Nimg.comb,Ntot.comb-Nimg.comb))
+#     #try to fit; data may be bad
+#     fit=try(glm(y~udv,family=quasibinomial(link="logit"))) 
+#     if (!(class(fit)[1]=="try-error")){
+#       beta=coef(fit)
+#       curve(logistic(beta[1]+beta[2]*x),from=min(udv),to=max(udv),add=T)
+#       title(paste("Session=",sess,"  Category=",cnames[catnum],"\n Width=",1/beta[2],
+#                   "  Image=",beta[1]/beta[2]))
+#       cf=c(beta[1]/beta[2],1/beta[2])
+#       names(cf)=c("Image","Width")
+#       simdat=try(sim(fit,1000))
+#       if (!(class(simdat)[1]=="try-error")){
+#         bb=simdat@coef #mc coefficient draws
+#         ci=array(dim=c(2,2))
+#         ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
+#         ci[2,]=quantile(1/bb[,2],c(.025,.975))
+#       }
+#       else {ci=matrix(NA,2,2)}
+#       rownames(ci)=c("Image","Width")
+#       out=list(coef=cf,ci=ci,session=sess,category=catnum)
+#     }
+#     else {out=list(coef=rep(NA,2),ci=matrix(NA,2,2),session=sess,category=catnum)}
+#   }
+#   else {out=list(coef=rep(NA,2),ci=matrix(NA,2,2),session=sess,category=catnum)}
+# }
 
 plotcat <- function(catnum,fit.sets,which.fit,add.plot=FALSE,jitt=0,colset=rainbow(50)){
   imval=as.vector(sapply(fit.sets[[which.fit]],function(x){x$coef[1]},simplify=T))

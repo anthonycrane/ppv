@@ -8,6 +8,8 @@ source("ppv_fitting.R")
 
 cnames=c("gray","peri","dom","sub")
 
+set.seed(12345)
+
 #first, combine all data, plot choice curve of everything
 Ntot.tab=table(Ntot,dv)
 Ntot.vals=as.integer(rownames(Ntot.tab))
@@ -36,10 +38,10 @@ fit=optim(beta0,optimfn,method="L-BFGS-B",lower=lb,upper=ub)
 curve(pt(fit$par[2]*(x+fit$par[1]),fit$par[3]),from=min(udv),to=max(udv),add=TRUE)
 
 #plot fits for individual session and category
-sessfit(sess=44,catnum=1)
+sessplot(sess=44,catnum=1)
 
 #fit an overdispersed binomial model to a given session and category
-aa=sessfit.od(4,4)
+sessplot(4,4,model='odlogit')
 
 #fit all sessions
 bb=list()
