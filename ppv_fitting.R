@@ -111,7 +111,7 @@ sessplot <- function(sess,catnum,model='logit'){
 
 
 plotcat <- function(catnum,fit.sets,which.fit,add.plot=FALSE,jitt=0,colset=rainbow(50)){
-  imval=as.vector(sapply(fit.sets[[which.fit]],function(x){x$coef[1]},simplify=T))
+  imval=as.vector(sapply(fit.sets[[which.fit]],function(x){x$coef[1]},simplify=TRUE))
   imserr=sapply(fit.sets[[which.fit]],function(x){x$ci[1,]},simplify=T)
   dim(imserr)=c(2,length(imval))
   imserr=t(imserr)

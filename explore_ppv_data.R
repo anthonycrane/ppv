@@ -52,7 +52,7 @@ for (ind in 1:numsess){
   for (ind2 in 1:numcat){
     for (model in modlist){
       fit = sessfit(ind,ind2,model)
-      if (!is.null(fit)){
+      if (!is.na(fit)){
         pf = process.fit(fit)
       }
       fit.objs[[model]][[(ind-1)*numcat+ind2]] = fit
