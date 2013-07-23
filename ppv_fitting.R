@@ -22,11 +22,12 @@ LLrobit <- function(beta,x,n,N){
 fitrobit <- function(data){
   # fit a robit model given outputs y (two-column, counts for each option, row names
   # are x values
-  n = y[,1]
-  N = rowSums(y)
-  x = as.numeric(rownames(y)) #convert to ms for stability
+  n = data[,1]
+  N = rowSums(data)
+  x = as.numeric(rownames(data)) #convert to ms for stability
   fitobj = optim(c(0,100,3), function(b){-LLrobit(b,x,n,N)}, control=list(maxit=10000))
-  fit = list(coefficients = fitobj$par, LL = -fitobj$value)
+  fit = list(coefficients = fitobj$par, LL = -fitobj$value, nobs = length(n), call='robit')
+  return(fit)
 }
 
 assemble.data <- function(sess, catnum){
@@ -61,7 +62,9 @@ sessfit <- function(sess,catnum,model='logit'){
     fit = switch(model,
                  logit = try(glm(y ~ udv, family=binomial(link='logit'))),
                  odlogit = try(glm(y ~ udv, family=quasibinomial(link='logit'))),
-                 robust = try(glmRob(y ~ udv, family=binomial(link='logit'))))
+                 robust = try(glmRob(y ~ udv, family=binomial(link='logit'))),
+                 robit = fitrobit(y))
+    
     if ((class(fit)[1]=="try-error")){
       return(NULL)
     }
@@ -99,6 +102,17 @@ process.fit <- function(fit){
     out=list(coef=cf,ci=ci)
   }
   
+}
+
+bic.fit <- function(fit){
+  LLobj = try(logLik(fit), silent=T)
+  if ((class(LLobj)[1]=="try-error")){
+    # for fits I had to code myself, or for which 
+    out = list(LL=fit$LL, N=fit$nobs, k=length(fit$coefficients))
+  }
+  else {
+    out = list(LL=LLobj[1], N=nobs(LLobj), k=attributes(LLobj)$df)
+  }
 }
 
 sessplot <- function(sess,catnum,model='logit'){
