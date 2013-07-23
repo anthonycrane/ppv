@@ -7,6 +7,7 @@ library("robust", quietly=T)
 
 logistic <- function(x){1/(1+exp(-x))}
 
+###### model log likelihood functions ######
 LLrobit <- function(beta,x,n,N){
   #calculate log-likelihood of data for robit regression
   #x is the independent variable
@@ -19,17 +20,35 @@ LLrobit <- function(beta,x,n,N){
   out=sum(LL)
 }
 
-fitrobit <- function(data){
-  # fit a robit model given outputs y (two-column, counts for each option, row names
-  # are x values
+LLblogit <- function(beta,x,n,N){
+  #calculate log likelihood for expanded logit model with biases
+  #x is the independent variable
+  #beta=[mu, beta, gamma, alpha] are the params, such that
+  #lim{x->Inf} p(x) = alpha and lim{x->-Inf} p(x) = gamma
+  #p(x) = {\gamma + \alpha e^{\beta x}} \over {1 + e^{\beta x}}
+  # = gamma * (1 + exp(beta * x - log(alpha/gamma))) / (1 + exp(beta *x))
+  #n is the number of successes in N tries
+  zz = beta[1] + beta[2]*x
+  logp = log(beta[3]) + log1p(exp(zz + log(beta[4]) - log(beta[3]))) - log1p(exp(zz))
+  logq = log(1-beta[3]) + log1p(exp(zz + log(1-beta[4]) - log(1-beta[3]))) - log1p(exp(zz))
+  LL = n*logp+(N-n)*logq + log(choose(N,n))
+  out=sum(LL)
+}
+
+###### code to fit models by max log likelihood ######
+fitLL <- function(data, LLfun, inits, modstr,...){
+  # fit a model given its data (as retrieved by assemble.data),
+  # log-likelihood function (LLfun), and initial guesses for params (inits)
   n = data[,1]
   N = rowSums(data)
   x = as.numeric(rownames(data)) #convert to ms for stability
-  fitobj = optim(c(0,100,3), function(b){-LLrobit(b,x,n,N)}, control=list(maxit=10000))
-  fit = list(coefficients = fitobj$par, LL = -fitobj$value, nobs = length(n), call='robit')
+  fitobj = optim(inits, function(b){-LLfun(b,x,n,N)}, control=list(maxit=10000),...)
+  fit = list(coefficients = fitobj$par, LL = -fitobj$value, nobs = length(n), call=modstr,
+             exit=fitobj$convergence)
   return(fit)
 }
 
+###### pull data corresponding to session and category ######
 assemble.data <- function(sess, catnum){
   # marshal all data for a given session and image category into a form suitable for regression
   
@@ -53,6 +72,7 @@ assemble.data <- function(sess, catnum){
   else {return(NULL)}
 }
 
+###### fit session data ######
 sessfit <- function(sess,catnum,model='logit'){
   # given session and category, fit model
   y = assemble.data(sess,catnum)
@@ -63,7 +83,8 @@ sessfit <- function(sess,catnum,model='logit'){
                  logit = try(glm(y ~ udv, family=binomial(link='logit'))),
                  odlogit = try(glm(y ~ udv, family=quasibinomial(link='logit'))),
                  robust = try(glmRob(y ~ udv, family=binomial(link='logit'))),
-                 robit = fitrobit(y))
+                 robit = fitLL(y,LLrobit,c(0,100,3),'robit',method='L-BFGS-B',lower=c(-Inf,-Inf,1e-5)),
+                 blogit = fitLL(y,LLblogit,c(0,100,0.1,0.9),'blogit'))
     
     if ((class(fit)[1]=="try-error")){
       return(NULL)
@@ -77,13 +98,14 @@ sessfit <- function(sess,catnum,model='logit'){
   }
 }
 
+###### extract params, confidence intervals, and model fit info ######
 process.fit <- function(fit){
   # extract some useful quantities for plotting from a fit object
   modstr = grep('^\\w+',toString(fit$call[1]),value=T)
   beta=coef(fit)
   cf=c(beta[1]/beta[2],1/beta[2])
   names(cf)=c("Image","Width")
-  if (any(is.na(beta)) | (fit$df.residual == 0)){
+  if (('exit' %in% names(fit)) || any(is.na(beta)) || (fit$df.residual == 0) ){
     out = NULL
   }
   else {
@@ -115,6 +137,7 @@ bic.fit <- function(fit){
   }
 }
 
+###### plotting functions ######
 sessplot <- function(sess,catnum,model='logit'){
   # given a session, category number, and model fit, plot data
   y = assemble.data(sess,catnum)
@@ -141,7 +164,6 @@ sessplot <- function(sess,catnum,model='logit'){
                 "  Image=",beta[1]/beta[2]))
   }
 }
-
 
 plotcat <- function(catnum,fit.sets,which.fit,add.plot=FALSE,jitt=0,colset=rainbow(50)){
   imval=sapply(fit.sets[[which.fit]],

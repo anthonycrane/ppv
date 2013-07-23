@@ -5,27 +5,23 @@ source("ppv_fitting.R")
 fit.sets = list()
 fit.objs = list()
 sc.mat=cbind(rep(1:numsess,each=numcat),rep(1:numcat,times=numsess)) #unique combinations of session and category
-modlist = c('logit','odlogit')
+modlist = c('logit','odlogit','robit','blogit')
 for (ind in 1:numsess){
   for (ind2 in 1:numcat){
+    print(c(ind,ind2))
     for (model in modlist){
       fit = sessfit(ind,ind2,model)
       if (!is.null(fit)){
         pf = process.fit(fit)
+        bicvars = bic.fit(fit)
       }
       else {
         pf = NULL
+        bicvars = NULL
       }
-      fit.objs[[model]][[(ind-1)*numcat+ind2]] = fit
-      fit.sets[[model]][[(ind-1)*numcat+ind2]] = pf
+      fit.sets[[model]][[(ind-1)*numcat+ind2]] = c(pf,bicvars)
     }
   }
 }
-dump(c("fit.sets","fit.objs","modlist"),file="conventional_fits.R")
-
-for (mod in modlist){
-  LLobjs = lapply(fit.objs[[mod]], function(x){if(is.null(x)) NA else logLik(x)})
-  LL = sum(sapply(LLobjs, function(x){x[1]}, simplify=T), na.rm=T)
-  N = sum(sapply(LLobjs, function(x){if(is.na(x)) NA else nobs(x)}, simplify=T), na.rm=T)
-  k = sum(sapply(LLobjs, function(x){if(is.na(x)) NA else attributes(x)$df}, simplify=T), na.rm=T)
-}
+dump(c("fit.sets","modlist"),file="conventional_fits.R")
+rm(list=ls())
