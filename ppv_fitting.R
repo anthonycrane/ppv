@@ -2,7 +2,8 @@
 #miscellaneous functions used to fit ppv choice curves
 #called by explore_ppv_data.R
 
-library("arm")
+library("arm", quietly=T)
+library("robust", quietly=T)
 
 logistic <- function(x){1/(1+exp(-x))}
 
@@ -11,11 +12,21 @@ LLrobit <- function(beta,x,n,N){
   #x is the independent variable
   #beta=[mu, beta, dof] are the parameters of the t-distribution (t=beta*(x-mu))
   #n is the number of successes in N tries
-  tt=beta[2]*(x+beta[1])
+  tt=beta[1]+beta[2]*x
   logp = pt(tt,beta[3],log.p=TRUE) #log(p)
   logq = pt(tt,beta[3],log.p=TRUE,lower.tail=FALSE) #log(1-p)
-  LL = n*logp+(N-n)*logq
+  LL = n*logp+(N-n)*logq + log(choose(N,n))
   out=sum(LL)
+}
+
+fitrobit <- function(data){
+  # fit a robit model given outputs y (two-column, counts for each option, row names
+  # are x values
+  n = y[,1]
+  N = rowSums(y)
+  x = as.numeric(rownames(y)) #convert to ms for stability
+  fitobj = optim(c(0,100,3), function(b){-LLrobit(b,x,n,N)}, control=list(maxit=10000))
+  fit = list(coefficients = fitobj$par, LL = -fitobj$value)
 }
 
 assemble.data <- function(sess, catnum){
@@ -41,15 +52,16 @@ assemble.data <- function(sess, catnum){
   else {return(NULL)}
 }
 
-sessfit <- function(sess,catnum,model){
-  # given session and category, fit logit model
+sessfit <- function(sess,catnum,model='logit'){
+  # given session and category, fit model
   y = assemble.data(sess,catnum)
   
   if (!is.null(y)){
     udv = as.numeric(rownames(y))
     fit = switch(model,
                  logit = try(glm(y ~ udv, family=binomial(link='logit'))),
-                 odlogit = try(glm(y ~ udv, family=quasibinomial(link='logit'))))
+                 odlogit = try(glm(y ~ udv, family=quasibinomial(link='logit'))),
+                 robust = try(glmRob(y ~ udv, family=binomial(link='logit'))))
     if ((class(fit)[1]=="try-error")){
       return(NULL)
     }
@@ -64,6 +76,7 @@ sessfit <- function(sess,catnum,model){
 
 process.fit <- function(fit){
   # extract some useful quantities for plotting from a fit object
+  modstr = grep('^\\w+',toString(fit$call[1]),value=T)
   beta=coef(fit)
   cf=c(beta[1]/beta[2],1/beta[2])
   names(cf)=c("Image","Width")
@@ -71,11 +84,17 @@ process.fit <- function(fit){
     out = NULL
   }
   else {
-    simdat=sim(fit,1000)
-    bb=simdat@coef #mc coefficient draws
     ci=array(dim=c(2,2))
-    ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
-    ci[2,]=quantile(1/bb[,2],c(.025,.975))
+    simdat = try(sim(fit,1000), silent=T)
+    if ((class(simdat)[1]=="try-error")){ #give up
+      ci[1,] = c(NA,NA)
+      ci[2,] = c(NA,NA)
+    }
+    else { #calculate quantiles
+      bb=simdat@coef #mc coefficient draws
+      ci[1,]=quantile(bb[,1]/bb[,2],c(.025,.975))
+      ci[2,]=quantile(1/bb[,2],c(.025,.975))
+    }
     rownames(ci)=c("Image","Width")
     out=list(coef=cf,ci=ci)
   }
@@ -91,7 +110,7 @@ sessplot <- function(sess,catnum,model='logit'){
     pp = y[,1]/Ntot
     qq = 1-pp
     sd = sqrt(pp*qq/Ntot)
-    plot(udv,pp,xlab="dv",ylab="Percent choose image")
+    plot(udv,pp,xlab="dv",ylab="Probability choose image")
     segments(udv,pp-sd,udv,pp+sd)
   }
   
@@ -111,10 +130,15 @@ sessplot <- function(sess,catnum,model='logit'){
 
 
 plotcat <- function(catnum,fit.sets,which.fit,add.plot=FALSE,jitt=0,colset=rainbow(50)){
-  imval=as.vector(sapply(fit.sets[[which.fit]],function(x){x$coef[1]},simplify=TRUE))
-  imserr=sapply(fit.sets[[which.fit]],function(x){x$ci[1,]},simplify=T)
-  dim(imserr)=c(2,length(imval))
+  imval=sapply(fit.sets[[which.fit]],
+                         function(x){if (is.null(x)) NA else x$coef[1]},simplify=TRUE)
+  imserr=sapply(fit.sets[[which.fit]],
+                function(x){if (is.null(x)) c(NA,NA) else x$ci[1,]},simplify=TRUE)
   imserr=t(imserr)
+  # convert to ms
+  imval = 1000 * imval
+  imserr = 1000 * imserr
+  
   sel=(sc.mat[,2]==catnum)
   this.sess=sc.mat[sel,1]
   xrng=this.sess+jitt

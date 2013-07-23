@@ -1,7 +1,5 @@
 #explore_ppv_data.R
 #look at pse fitting and diagnostics for ppv behavioral data
-library("MASS")
-library("arm")
 
 source("all_ppv_data.R")
 source("ppv_fitting.R")
@@ -43,24 +41,7 @@ sessplot(sess=44,catnum=1)
 #fit an overdispersed binomial model to a given session and category
 sessplot(4,4,model='odlogit')
 
-#fit all sessions
-fit.sets = list()
-fit.objs = list()
-sc.mat=cbind(rep(1:numsess,each=numcat),rep(1:numcat,times=numsess)) #unique combinations of session and category
-modlist = c('logit','odlogit')
-for (ind in 1:numsess){
-  for (ind2 in 1:numcat){
-    for (model in modlist){
-      fit = sessfit(ind,ind2,model)
-      if (!is.na(fit)){
-        pf = process.fit(fit)
-      }
-      fit.objs[[model]][[(ind-1)*numcat+ind2]] = fit
-      fit.sets[[model]][[(ind-1)*numcat+ind2]] = pf
-    }
-  }
-}
-dump(c("fit.sets","fit.objs"),file="conventional_fits.R")
+source('conventional_fits.R')
 
 #plot estimates of image value
 catnum=2
@@ -70,6 +51,7 @@ bb=plotcat(catnum,fit.sets,2,1)
 #histogram within category
 catnum=2
 sel=(sc.mat[,2]==catnum)
-imval=as.vector(sapply(fit.sets[[1]],function(x){x$coef[1]},simplify=T))
+imval=sapply(fit.sets[[1]],
+             function(x){if(is.null(x)) NA else 1000*x$coef[1]},simplify=T)
 hist(imval[sel],breaks=c(-1e6,seq(from=-40,to=40,by=5),1e6),xlim=c(-40,40))
-sd(imval[sel])
+sd(imval[sel], na.rm=T)
