@@ -110,6 +110,8 @@ process.fit <- function(fit){
   }
   else {
     ci=array(dim=c(2,2))
+    # use sim to get a better posterior ci for the betas, one that
+    # includes uncertainty in sigma^2, not just se(beta)
     simdat = try(sim(fit,1000), silent=T)
     if ((class(simdat)[1]=="try-error")){ #give up
       ci[1,] = c(NA,NA)

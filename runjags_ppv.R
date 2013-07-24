@@ -1,12 +1,13 @@
-#runjags_frbayes.R
+#runjags_ppv.R
 #run jags for a Bayesian hierarchical firing rate regression model
 #on ppv data
 
+set.seed(12345)
 ptm=proc.time() #get start time
 
 library(rjags)
 
-dotrend = 0 #include time trend?
+dotrend = 1 #include time trend?
 
 if (!dotrend) {
   fname="ppv_results"
@@ -25,14 +26,16 @@ m <- jags.model(bugstr, d, n.chains=5,n.adapt=1000) #,inits=initfun)
 update(m,10000)
 
 if (!dotrend) {
-  x <- coda.samples(m, c("V","v","choice.scale","omega.std","sess.std",
-                         "resid.v","resid.lp","resid.N","linpred",
-                         "t.loc","t.scale","t.df"), n.iter=20000,thin=20)
+  vars = c("V","v","choice.scale","omega.std","sess.std",
+           "resid.v","resid.lp","resid.N","linpred",
+           "t.loc","t.scale","t.df")  
 } else {
-  x <- coda.samples(m, c("V","v","choice.scale","omega.std","sess.std", #ppv5
-                         "resid.v","resid.lp","resid.N","linpred",
-                         "t.loc","t.scale","t.df","vslope"), n.iter=20000,thin=20)
+  vars = c("V","v","choice.scale","omega.std","sess.std", #ppv5
+           "resid.v","resid.lp","resid.N","linpred",
+           "t.loc","t.scale","t.df","vslope")
 }
+
+x <- coda.samples(m, vars, n.iter=20000,thin=20)
 
 #now, do diagnostics
 jagssum=summary(x)
@@ -60,7 +63,10 @@ xx=as.data.frame(do.call(rbind,x))
 p <- coda.samples(m, c("ppred.v","ppred.choice.scale","ppred.resid.lp"), n.iter=5000,thin=10)
 pp=as.data.frame(do.call(rbind,p))
 
-dumplist=c("xx","ss","qq","ff","pp","Rhat")
+#finally, estimate the model's DIC
+dic <- dic.samples(m, n.iter=5000,thin=10,type='pD')
+
+dumplist=c("xx","ss","qq","ff","pp","Rhat","dic")
 save(list=dumplist,file=fname)
 
 #how long did this take?
