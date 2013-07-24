@@ -7,15 +7,27 @@ ptm=proc.time() #get start time
 
 library(rjags)
 
-dotrend = 1 #include time trend?
+# model choices: 'model', 'trend', 'nomonk'
+modstr = 'trend'
 
-if (!dotrend) {
+if (modstr == 'model'){
   fname="ppv_results"
-  modstr="model"
-} else {
+  vars = c("V","v","choice.scale","omega.std","sess.std",
+           "resid.v","resid.lp","resid.N","linpred",
+           "t.loc","t.scale","t.df")  
+} else if (modstr == 'trend'){
   fname="ppv_trend_results"
-  modstr="trend"
+  vars = c("V","v","choice.scale","omega.std","sess.std", 
+           "resid.v","resid.lp","resid.N","linpred",
+           "t.loc","t.scale","t.df","vslope")
+} else if (modstr == 'nomonk'){
+  fname="ppv_nomonk_results"
+  vars = c("V","v","choice.scale","omega.std","sess.std", 
+           "resid.v","resid.lp","resid.N","linpred",
+           "t.loc","t.scale","t.df")
 }
+
+
 
 bugstr=paste(modstr,".bug",sep="") #name of model file
 
@@ -24,16 +36,6 @@ load.module("glm")
 m <- jags.model(bugstr, d, n.chains=5,n.adapt=1000) #,inits=initfun)
 
 update(m,10000)
-
-if (!dotrend) {
-  vars = c("V","v","choice.scale","omega.std","sess.std",
-           "resid.v","resid.lp","resid.N","linpred",
-           "t.loc","t.scale","t.df")  
-} else {
-  vars = c("V","v","choice.scale","omega.std","sess.std", #ppv5
-           "resid.v","resid.lp","resid.N","linpred",
-           "t.loc","t.scale","t.df","vslope")
-}
 
 x <- coda.samples(m, vars, n.iter=20000,thin=20)
 
