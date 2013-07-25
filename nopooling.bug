@@ -1,0 +1,42 @@
+model { #for use on ppv behavioral data
+	#for each image category, each monkey has a session-to-session distribution of social value
+	#IMPORTANT: all units are in SECONDS of juice!!!!
+
+	#initialize priors
+	logomega ~ dunif(-6,2)
+	log(omega.std) <- logomega #standard deviation of "trial-to-trial" overdispersion for a given monk
+	omega.prec <- pow(omega.std,-2)
+
+	#all sessions are independent, along with precisions for the t distribution
+	for (ind in 1:numsess){
+		v[ind] ~ dnorm(0,1e2)
+
+		choice.scale[ind] ~ dt(0,1e-3,1)T(0,) #scale factor for dv scale, very weakly informative
+		choice.prec[ind] <- pow(choice.scale[ind],-1)
+	}
+
+	#loop over distinct decisions
+	for (ind in 1:N){ 
+		pred.lp[ind] <- choice.prec[session[ind]]*(dv[ind]+v[session[ind]]) #prediction for logit(p)
+		linpred[ind] ~ dnorm(pred.lp[ind],omega.prec)
+		resid.lp[ind] <- linpred[ind] - pred.lp[ind] #residual for logit(p)
+		
+		logit(p.img[ind]) <- linpred[ind]
+		
+		Nimg[ind] ~ dbin(p.img[ind],Ntot[ind])
+		pred.N[ind] <- p.img[ind]*Ntot[ind]
+		resid.N[ind] <- Nimg[ind]-pred.N[ind]
+	}
+
+	########## now draw some things we care about ##########
+
+		ppred.v ~ dnorm(0,1e2) #generate a fake set of session pses for each monk
+		ppred.choice.scale ~ dt(0,1e-3,1)T(0,) #generate a session choice scale
+
+		for (ind2 in 1:10) {
+			ppred.resid.lp[ind2] ~ dnorm(0,omega.prec) #generate several overdispersion residuals
+		}
+	
+	
+	
+}

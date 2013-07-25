@@ -7,8 +7,8 @@ ptm=proc.time() #get start time
 
 library(rjags)
 
-# model choices: 'model', 'trend', 'nomonk'
-modstr = 'trend'
+# model choices: 'model', 'trend', 'nomonk', 'nocat', 'nomonknocat', 'nopooling'
+modstr = 'nopooling'
 
 if (modstr == 'model'){
   fname="ppv_results"
@@ -25,6 +25,20 @@ if (modstr == 'model'){
   vars = c("V","v","choice.scale","omega.std","sess.std", 
            "resid.v","resid.lp","resid.N","linpred",
            "t.loc","t.scale","t.df")
+} else if (modstr == 'nocat'){
+    fname="ppv_nocat_results"
+    vars = c("V","v","choice.scale","omega.std","sess.std", 
+             "resid.v","resid.lp","resid.N","linpred",
+             "t.loc","t.scale","t.df")
+} else if (modstr == 'nomonknocat'){
+  fname="ppv_nomonknocat_results"
+  vars = c("V","v","choice.scale","omega.std","sess.std", 
+           "resid.v","resid.lp","resid.N","linpred",
+           "t.loc","t.scale","t.df")
+} else if (modstr == 'nopooling'){
+  fname="ppv_nopooling_results"
+  vars = c("v","choice.scale","omega.std", 
+           "resid.lp","resid.N","linpred")
 }
 
 
