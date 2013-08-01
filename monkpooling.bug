@@ -1,0 +1,42 @@
+model { #for use on ppv behavioral data
+  #each monkey has a single curve pooled across all sessions
+	#IMPORTANT: all units are in SECONDS of juice!!!!
+
+	#initialize individual priors for each monk for each category
+	for (ind in 1:nummonk){
+		V[ind] ~ dnorm(0,1e2) #V[monk]
+		choice.scale[ind] ~ dt(0,1e-3,1)T(0,) #scale factor for dv scale, very weakly informative
+		choice.prec[ind] <- pow(choice.scale[ind],-1) #monk-specific precision for dv
+		logomega[ind] ~ dunif(-6,2)
+		log(omega.std[ind]) <- logomega[ind] #standard deviation of "trial-to-trial" overdispersion for a given monk
+		omega.prec[ind] <- pow(omega.std[ind],-2)
+	}
+
+	#loop over distinct decisions
+	for (ind in 1:N){ 
+		pred.lp[ind] <- choice.prec[sessvec[session[ind]]]*(dv[ind]+V[sessvec[session[ind]]]) #prediction for logit(p)
+		linpred[ind] ~ dnorm(pred.lp[ind],omega.prec[sessvec[session[ind]]])
+		resid.lp[ind] <- linpred[ind] - pred.lp[ind] #residual for logit(p)
+		
+		logit(p.img[ind]) <- linpred[ind]
+		
+		Nimg[ind] ~ dbin(p.img[ind],Ntot[ind])
+		pred.N[ind] <- p.img[ind]*Ntot[ind]
+		resid.N[ind] <- Nimg[ind]-pred.N[ind]
+	}
+
+	########## now draw some things we care about ##########
+
+	for (ind in 1:nummonk){ #for each monk
+		ppred.v[ind] <- V[ind] #generate a fake set of session pses for each monk
+		ppred.choice.scale[ind] <- choice.scale[ind]  #generate monk choice scale
+
+		for (ind2 in 1:10) {
+			ppred.resid.lp[ind,ind2] ~ dnorm(0,omega.prec[ind]) #generate several overdispersion residuals
+		}
+	}
+	
+
+	
+	
+}
