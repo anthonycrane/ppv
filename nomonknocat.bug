@@ -1,5 +1,6 @@
-model { #for use on ppv behavioral data
-	#for each image category, each monkey has a session-to-session distribution of social value
+model { #MODEL 3
+	#for use on ppv behavioral data
+	#collapse across all monks and categories; model session-to-session variation
 	#IMPORTANT: all units are in SECONDS of juice!!!!
 
 	#initialize individual priors for each monk for each category

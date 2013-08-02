@@ -1,4 +1,5 @@
-model { #for use on ppv behavioral data
+model { #MODEL 7
+	#for use on ppv behavioral data
 	#for each image category, each monkey has a session-to-session distribution of social value
 	#IMPORTANT: all units are in SECONDS of juice!!!!
 

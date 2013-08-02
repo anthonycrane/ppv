@@ -1,5 +1,6 @@
-model { #for use on ppv behavioral data
-  #each monkey has a single curve pooled across all sessions
+model { #MODEL 2
+	#for use on ppv behavioral data
+	#each monkey has a single curve pooled across all sessions
 	#IMPORTANT: all units are in SECONDS of juice!!!!
 
 	#initialize individual priors for each monk for each category
