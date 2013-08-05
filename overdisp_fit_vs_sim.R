@@ -1,6 +1,14 @@
-#overdisp_fit_vs_sim.R
-#compare overdispersion as fit to data and overdispersion as simulated in model
+##load up data
+load("ppv_results") #load data output
+source("all_ppv_data.R") #raw dataoverdisp_fit_vs_sim.R
+
+#set up plot
 par(mfrow=c(2,1))
+
+#some useful reference variables
+vnames=colnames(xx)
+pnames=colnames(pp)#compare overdispersion as fit to data and overdispersion as simulated in model
+
 #first, do data
 sel.inds=grepl("resid.lp",vnames)
 sel.rows=sample(dim(xx)[1],sum(sel.inds)) #one row for each variable -- sampling of real data
