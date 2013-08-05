@@ -9,7 +9,8 @@ The code is written in R and makes use of [JAGS](http://mcmc-jags.sourceforge.ne
 
 # Workflow:
 ## Running Analyses:
-* `explore_ppv_data.R` uses conventional logit fits to model image values separately for each session. This is (more or less) the approach used in previous papers and is included for comparison. This file compiles parameters for all the fits and saves them in dump format in `conventional_fits.R` for later use.
+* `make_conventional_fits.R` fits a variety of conventional models (logit, overdispersed logit, robust logit, logit with biases) and stores the results in `conventional_fits.R` in R's `dump` format.
+* `explore_ppv_data.R` uses conventional logit fits to model image values separately for each session. Runs some basic plots. Relies on `conventional_fits.R` as produced by `make_conventional_fits.R`. 
 * `runjags_ppv.R` performs MCMC inference on the model(s) and saves the samples drawn from the Markov chains to files for later analysis. Setting the `modstr` variable selects which model to fit for analysis. Correspondences between model strings and model numbers in the text are listed in the file and restated below. 
 * Models are specified in BUGS/JAGS language in the models listed below. Models are (so far) only tested in JAGS. The correct model will be used in `runjags_ppv.R` so long as the `modstr` variable is specified correctly. Results will be saved in separate files depending on `modstr`. 
     - Model 0: `nopooling.bug`
