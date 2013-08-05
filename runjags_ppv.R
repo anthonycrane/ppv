@@ -10,40 +10,40 @@ library(rjags)
 # model choices: 'model', 'trend', 'nomonk', 'nocat', 'nomonknocat', 'nopooling'
 modstr = 'monkpooling'
 
-if (modstr == 'model'){
+if (modstr == 'model'){ #Model 6
   fname="ppv_results"
   vars = c("V","v","choice.scale","omega.std","sess.std",
            "resid.v","resid.lp","resid.N","linpred",
            "t.loc","t.scale","t.df")  
-} else if (modstr == 'trend'){
+} else if (modstr == 'trend'){ #Model 7
   fname="ppv_trend_results"
   vars = c("V","v","choice.scale","omega.std","sess.std", 
            "resid.v","resid.lp","resid.N","linpred",
            "t.loc","t.scale","t.df","vslope")
-} else if (modstr == 'nomonk'){
+} else if (modstr == 'nomonk'){ #Model 5
   fname="ppv_nomonk_results"
   vars = c("V","v","choice.scale","omega.std","sess.std", 
            "resid.v","resid.lp","resid.N","linpred",
            "t.loc","t.scale","t.df")
-} else if (modstr == 'nocat'){
+} else if (modstr == 'nocat'){ #Model 4
     fname="ppv_nocat_results"
     vars = c("V","v","choice.scale","omega.std","sess.std", 
              "resid.v","resid.lp","resid.N","linpred",
              "t.loc","t.scale","t.df")
-} else if (modstr == 'nomonknocat'){
+} else if (modstr == 'nomonknocat'){ #Model 3
   fname="ppv_nomonknocat_results"
   vars = c("V","v","choice.scale","omega.std","sess.std", 
            "resid.v","resid.lp","resid.N","linpred",
            "t.loc","t.scale","t.df")
-} else if (modstr == 'nopooling'){
+} else if (modstr == 'nopooling'){ #Model 0
   fname="ppv_nopooling_results"
   vars = c("v","choice.scale","omega.std", 
            "resid.lp","resid.N","linpred")
-} else if (modstr == 'monkpooling'){
+} else if (modstr == 'monkpooling'){ #Model 2
   fname="ppv_monkpooling_results"
   vars = c("V","choice.scale","omega.std", 
            "resid.lp","resid.N","linpred")
-} else if (modstr == 'monkcatpooling'){
+} else if (modstr == 'monkcatpooling'){ #Model 1
   fname="ppv_monkcatpooling_results"
   vars = c("V","choice.scale","omega.std", 
            "resid.lp","resid.N","linpred")

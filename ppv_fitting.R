@@ -208,12 +208,13 @@ jags_sess_plot <- function(sess,catnum){
 }
 
 ###### plotting functions: selections of data ######
-plotcat <- function(catnum,fit.sets,which.fit,monkvec,datevec,add.plot=FALSE,jitt=0,colset=rainbow(50)){
+plotcat <- function(catnum,fit.sets,which.fit,monkvec,datevec,add.plot=FALSE,jitt=0,colset=rainbow(50),
+                    which.coeff=1,add.title=TRUE){
   #first, extract the relevant category and model from each session
   ff = sapply(fit.sets[[which.fit]], function(x){x[[catnum]]})
   #plot all sessions for a given category
-  imval=sapply(ff, function(x){if (is.null(x$coef)) NA else x$coef[1]},simplify=TRUE)
-  imserr=sapply(ff, function(x){if (is.null(x$ci)) c(NA,NA) else x$ci[1,]},simplify=TRUE)
+  imval=sapply(ff, function(x){if (is.null(x$coef)) NA else x$coef[which.coeff]},simplify=TRUE)
+  imserr=sapply(ff, function(x){if (is.null(x$ci)) c(NA,NA) else x$ci[which.coeff,]},simplify=TRUE)
   imserr=t(imserr)
   # convert to ms
   imval = 1000 * imval
@@ -235,15 +236,17 @@ plotcat <- function(catnum,fit.sets,which.fit,monkvec,datevec,add.plot=FALSE,jit
     sel = which(sel)[dperm$ix] #reorder to grab in correct date order
     xrng=sstart+(1:length(sel))+jitt
     points(xrng,imval[sel],pch=16,
-           ylim=c(-40,40),col=colset[which.fit])
-    segments(x0=xrng,y0=imserr[sel,1],y1=imserr[sel,2],col=colset[which.fit])
+           ylim=c(-40,40),col=colset[ind])
+    segments(x0=xrng,y0=imserr[sel,1],y1=imserr[sel,2],col=colset[ind])
     sstart=sstart+length(sel) #increase x offset by number of sessions this monk
   }
   
   axis(1)
   axis(2)
+  if (add.title){
   title(main=paste('Session-by-session image values\n Category: ',cnames[catnum],sep=""),
         ylab='Image value (ms juice)',xlab='Session')
+  }
   abline(h=0)
   out=cbind(imval[sel],imserr[sel,])
 }
