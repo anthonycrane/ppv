@@ -22,7 +22,7 @@ nummonk=8
 #distributions inferred from the data
 #in other words, show that the session choice curves we see are typical for our model
 
-#ready the pdf!
+#ready the svg!
 svg(file='dat_vs_sim.svg')
 par(mfcol=c(3,2))
 

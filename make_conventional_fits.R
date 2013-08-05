@@ -1,15 +1,17 @@
 source("all_ppv_data.R")
 source("ppv_fitting.R")
 
-#fit all sessions
+#allocate variables
 fit.sets = list()
-fit.objs = list()
-sc.mat=cbind(rep(1:numsess,each=numcat),rep(1:numcat,times=numsess)) #unique combinations of session and category
 modlist = c('logit','odlogit','robit','blogit')
-for (ind in 1:numsess){
-  for (ind2 in 1:numcat){
-    print(c(ind,ind2))
-    for (model in modlist){
+
+#fit all sessions
+for (model in modlist){
+  this_model = list()
+  for (ind in 1:numsess){
+    this_sess = list()
+    for (ind2 in 1:numcat){
+      print(c(model,ind,ind2))
       fit = sessfit(ind,ind2,model)
       if (!is.null(fit)){
         pf = process.fit(fit)
@@ -19,9 +21,11 @@ for (ind in 1:numsess){
         pf = NULL
         bicvars = NULL
       }
-      fit.sets[[model]][[(ind-1)*numcat+ind2]] = c(pf,bicvars)
+      this_sess[[ind2]] = c(pf,bicvars)
     }
+    this_model[[ind]] = this_sess
   }
+  fit.sets[[model]] = this_model
 }
 dump(c("fit.sets","modlist"),file="conventional_fits.R")
 rm(list=ls())

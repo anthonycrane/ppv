@@ -7,6 +7,21 @@ library("robust", quietly=T)
 
 logistic <- function(x){1/(1+exp(-x))}
 
+findmap <- function(x,N){
+  #find maximum a posteriori value of a given variable given x, a vector of samples
+  #from its distribution
+  #N is the number of points to use, and should be a power of 2 (as per help from ?density)
+  
+  dd = density(x,n=N)
+  
+  max_ind = which.max(dd$y)
+  
+  mapest = dd$x[max_ind]
+  
+  return(mapest)
+  
+}
+
 ###### model log likelihood functions ######
 LLrobit <- function(beta,x,n,N){
   #calculate log-likelihood of data for robit regression
@@ -167,30 +182,69 @@ sessplot <- function(sess,catnum,model='logit'){
   }
 }
 
-plotcat <- function(catnum,fit.sets,which.fit,add.plot=FALSE,jitt=0,colset=rainbow(50)){
-  imval=sapply(fit.sets[[which.fit]],
-                         function(x){if (is.null(x)) NA else x$coef[1]},simplify=TRUE)
-  imserr=sapply(fit.sets[[which.fit]],
-                function(x){if (is.null(x)) c(NA,NA) else x$ci[1,]},simplify=TRUE)
+jags_sess_plot <- function(sess,catnum){
+  #plot jags fitting result for a given session and category
+  #of course, jags is bayesian, so we will take MAP estimates of parameters
+  #THIS FUNCTION WILL ADD TO PLOT, NOT START A NEW PLOT WINDOW!
+  
+  sel=(piccat==catnum)&(session==sess)
+  if (any(sel)){
+    udv=1000*sort(unique(dv[sel]))
+  }
+  
+  omegaind = grep(paste('choice.scale\\[',sess,'\\]',sep=''),names(xx)) #width parameter
+  vvind = grep(paste('^v\\[',sess,',',catnum,sep=''),names(xx)) #pse/value
+  
+  #now grab median values of these (same as MAP estimate, since these are)
+  omegasamp = xx[,omegaind]
+  vvsamp = xx[,vvind]
+  
+  #use the density function to calculate map estimate
+  omega = 1000*findmap(omegasamp,1024)
+  vv = 1000*findmap(vvsamp,1024)
+  
+  #plot a curve
+  curve(logistic((x+vv)/omega),from=min(udv),to=max(udv),add=T)
+}
+
+###### plotting functions: selections of data ######
+plotcat <- function(catnum,fit.sets,which.fit,monkvec,datevec,add.plot=FALSE,jitt=0,colset=rainbow(50)){
+  #first, extract the relevant category and model from each session
+  ff = sapply(fit.sets[[which.fit]], function(x){x[[catnum]]})
+  #plot all sessions for a given category
+  imval=sapply(ff, function(x){if (is.null(x$coef)) NA else x$coef[1]},simplify=TRUE)
+  imserr=sapply(ff, function(x){if (is.null(x$ci)) c(NA,NA) else x$ci[1,]},simplify=TRUE)
   imserr=t(imserr)
   # convert to ms
   imval = 1000 * imval
   imserr = 1000 * imserr
   
-  sel=(sc.mat[,2]==catnum)
-  this.sess=sc.mat[sel,1]
-  xrng=this.sess+jitt
-  if(!add.plot){
-    plot(xrng,imval[sel],xlab="Session",ylab="Image value (ms juice)",pch=16,
-         ylim=c(-40,40),col=colset[which.fit])
+  umonk=unique(monkvec)
+  sstart = 0
+  
+  if (!add.plot){
+    plot.new()
+    plot.window(xlim=c(0,length(monkvec)+1),ylim=c(-120,120))
   }
-  else {
-    points(xrng,imval[sel],xlab="Session",ylab="Image value (ms juice)",pch=16,
+  
+  for (ind in 1:length(umonk)){
+    mm=umonk[ind]
+    sel=(monkvec==mm)
+    thisdates = datevec[sel]
+    dperm = sort.int(thisdates,index.return=T) #permutation that puts date in date order
+    sel = which(sel)[dperm$ix] #reorder to grab in correct date order
+    xrng=sstart+(1:length(sel))+jitt
+    points(xrng,imval[sel],pch=16,
            ylim=c(-40,40),col=colset[which.fit])
+    segments(x0=xrng,y0=imserr[sel,1],y1=imserr[sel,2],col=colset[which.fit])
+    sstart=sstart+length(sel) #increase x offset by number of sessions this monk
   }
-  segments(xrng,imserr[sel,1],this.sess,imserr[sel,2],col=colset[which.fit])
+  
+  axis(1)
+  axis(2)
+  title(main=paste('Session-by-session image values\n Category: ',cnames[catnum],sep=""),
+        ylab='Image value (ms juice)',xlab='Session')
   abline(h=0)
-  #title(paste("Image value for category=",cnames[catnum],sep=""))
   out=cbind(imval[sel],imserr[sel,])
 }
 
@@ -210,13 +264,12 @@ plotquants <- function(qq,varlabs=c()){
   segments(x0=qq[,1],y0=yvec,x1=qq[,5],lwd=1)
 }
 
-plotsbys <- function(catnum,data,monkvec,datevec=rep(NA,length(monkvec)),add.plot=FALSE){
+plotsbys <- function(catnum,data,monkvec,datevec=1:length(monkvec),add.plot=FALSE){
   #plot session-by-session values for each monk 
-  #not necessarily sorted by date
   #catnum is the category number
   #data is a matrix of posterior samples, each column a variable
   #monkvec is the monk associated with each session
-  #datevec is a date vector used or order sessions
+  #datevec is a date vector used to order sessions
   vnames=colnames(data)
   v.inds=grepl(paste("^v\\[\\d*,",catnum,sep=""),vnames)
   xsel=1000*data[,v.inds] #scale in ms
@@ -241,7 +294,7 @@ plotsbys <- function(catnum,data,monkvec,datevec=rep(NA,length(monkvec)),add.plo
     points(xrng,quants[sel,2],pch=16,
            ylim=range(quants),col=colmap[ind])
     segments(x0=xrng,y0=quants[sel,1],y1=quants[sel,3],col=colmap[ind])
-    text(x=mean(xrng),y=range(quants)[1],mnames[ind],col=colmap[ind])
+    text(x=mean(xrng),y=-110,mnames[ind],col=colmap[ind])
     sstart=sstart+length(sel) #increase x offset by number of sessions this monk
   }
   axis(1)
