@@ -27,7 +27,7 @@ The code is written in R and makes use of [JAGS](http://mcmc-jags.sourceforge.ne
 * Figure 3, comparing fitted and simulated data, can be generated with `dat_vs_sim.R`.
 * A similar comparison of overdispersion in real and synthetic data can be produced via `overdisp_fit_vs_sim.R`.
 * Figure 4, with comparisons between hierarchical and unpooled estimates, can be reproduced with the code in `make_figure_sessfit.R`.
-* The file `explore_curve_widths.R` plots conventional fits of juice precisions/curve widths for each session as a function of time.
+* The file `explore_curve_widths.R` plots both conventional and Bayesian hierarchical fits of juice precisions/curve widths for each session as a function of time.
 * Figure 5, which displays comparisons of the posterior mean and variance for image values across subjects, can be reproduced using `make_post_mean_comparison.R` and `make_post_var_comparison.R`.
 * Figure 6, the model including time trend, was made using `make_trend_allmonks.R` and `make_d2d_pse.R`.
 
